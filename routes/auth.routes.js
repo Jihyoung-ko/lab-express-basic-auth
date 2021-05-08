@@ -3,6 +3,7 @@ const router = express.Router();
 const bcryptjs = require('bcryptjs');
 const saltRounds = 10;
 const User = require('../models/User.model');
+const checkUserLoggedIn = require('../middleware/auth');
 
 router.get('/signup', (req, res) => {
   res.render('auth/signup');
@@ -54,7 +55,7 @@ router.post('/login', (req, res, next) =>{
     } else if (bcryptjs.compareSync(password, user.hashedPassword)) {
       // res.render('users/user-profile', { user });
       req.session.currentUser = user;
-      res.redirect('/user-profile');
+      res.redirect('/profile');
 
     } else {
       res.render('auth/login', {errorMessage: 'Incorrect password'});
@@ -64,9 +65,25 @@ router.post('/login', (req, res, next) =>{
 
 });
 
-router.get('/user-profile', (req, res) => {
+router.get('/logout', (req, res, next) => {
+  req.session.destroy(error => {
+    if (error) {
+      return next(error);
+    }
+  });
+    return res.redirect('/login');
+});
+
+router.get('/profile', (req, res) => {
   console.log('User', req.session.currentUser);
   res.render('users/user-profile', { userInSession: req.session.currentUser });
 });
+
+router.get('/main', checkUserLoggedIn, (req, res) => {
+  res.render('users/main');
+});
+
+router.get('/private', checkUserLoggedIn, (req, res) => res.render('users/private'));
+
 
 module.exports = router;
